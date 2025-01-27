@@ -285,7 +285,13 @@ protected:
     static void fillAPMUpForGraph(VertexIndexAPM& apm, const Graph& g)
     {
         int i = 0;
-        BGL_FORALL_VERTICES(v, g, Graph)
+        // BGL_FORALL_VERTICES(v, g, Graph)  // error: missing 'typename' prior to dependent type name
+        for (std::pair< Vertex, Vertex> bgl_range_288 = vertices(g); 
+                (bgl_range_288.first) != (bgl_range_288.second); 
+                (bgl_range_288.first) = (bgl_range_288.second)) 
+            for (Vertex v; 
+                (bgl_range_288.first) != (bgl_range_288.second) ? (v = *(bgl_range_288.first), true) : false; 
+                ++(bgl_range_288.first))
         {
             put(apm, v, i++);
         }
@@ -344,23 +350,31 @@ public:
     /** \brief Virtual destructor. */
     virtual ~BoostBidiGraphP()
     {
-        deleteGraph();
+        BoostGraphP<Graph>::deleteGraph();
     }
 
 public:
     //-----<BGL Shortcuts>----
 
     /** \brief Gets all input edges of a vertex \a v. */
-    inline IedgeIterPair getInEdges(Vertex v) { return boost::in_edges(v, getGraph()); }
+    inline IedgeIterPair getInEdges(typename BoostGraphP<Graph>::Vertex v) { 
+        return boost::in_edges(v, BoostGraphP<Graph>::getGraph()); 
+    }
 
     /** \brief Gets all input edges of a vertex \a v (const). */
-    inline IedgeIterPair getInEdges(Vertex v) const { return boost::in_edges(v, getGraph()); }
+    inline IedgeIterPair getInEdges(typename BoostGraphP<Graph>::Vertex v) const { 
+        return boost::in_edges(v, BoostGraphP<Graph>::getGraph()); 
+    }
 
     /** \brief Returns the numbers of input  edges of a vertix \a v. */
-    inline size_t getInEdgesNum(Vertex v) const { return (size_t)boost::in_degree(v, getGraph()); }
+    inline size_t getInEdgesNum(typename BoostGraphP<Graph>::Vertex v) const { 
+        return (size_t)boost::in_degree(v, BoostGraphP<Graph>::getGraph()); 
+    }
 
      /** \brief Clears all input edges of a vertex \a v. */
-    inline void clearInEdges(Vertex v) { boost::clear_in_edges(v, getGraph()); }
+    inline void clearInEdges(typename BoostGraphP<Graph>::Vertex v) { 
+        boost::clear_in_edges(v, BoostGraphP<Graph>::getGraph()); 
+    }
 
 }; // class BoostBidiGraphP
 
