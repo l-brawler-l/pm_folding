@@ -286,7 +286,7 @@ protected:
     {
         int i = 0;
         // BGL_FORALL_VERTICES(v, g, Graph)  // error: missing 'typename' prior to dependent type name
-        for (std::pair< Vertex, Vertex> bgl_range_288 = vertices(g); 
+        for (auto bgl_range_288 = vertices(g); 
                 (bgl_range_288.first) != (bgl_range_288.second); 
                 (bgl_range_288.first) = (bgl_range_288.second)) 
             for (Vertex v; 
@@ -337,6 +337,17 @@ template<typename Graph
 class BoostBidiGraphP : public BoostGraphP<Graph> //, VertexCopier, EdgeCopier> 
 {
 public:
+    // typedefs for labeledts.h
+    typedef typename BoostGraphP<Graph>::Vertex Vertex;
+    typedef typename BoostGraphP<Graph>::Edge Edge;
+    typedef typename BoostGraphP<Graph>::VertexIter VertexIter;
+    typedef typename BoostGraphP<Graph>::OedgeIter OedgeIter;
+    typedef typename BoostGraphP<Graph>::EdgeIter EdgeIter;
+    typedef typename BoostGraphP<Graph>::VertexIterPair VertexIterPair;
+    typedef typename BoostGraphP<Graph>::OedgeIterPair OedgeIterPair;
+    typedef typename BoostGraphP<Graph>::EdgeIterPair EdgeIterPair;
+    typedef typename BoostGraphP<Graph>::TargetVertexFilter TargetVertexFilter;
+    typedef typename BoostGraphP<Graph>::TargVertexEdgeIter TargVertexEdgeIter;
     //----<Types>----
 
     /** \brief Iterator for  input edges of a graph. */
@@ -357,22 +368,22 @@ public:
     //-----<BGL Shortcuts>----
 
     /** \brief Gets all input edges of a vertex \a v. */
-    inline IedgeIterPair getInEdges(typename BoostGraphP<Graph>::Vertex v) { 
+    inline IedgeIterPair getInEdges(Vertex v) { 
         return boost::in_edges(v, BoostGraphP<Graph>::getGraph()); 
     }
 
     /** \brief Gets all input edges of a vertex \a v (const). */
-    inline IedgeIterPair getInEdges(typename BoostGraphP<Graph>::Vertex v) const { 
+    inline IedgeIterPair getInEdges(Vertex v) const { 
         return boost::in_edges(v, BoostGraphP<Graph>::getGraph()); 
     }
 
     /** \brief Returns the numbers of input  edges of a vertix \a v. */
-    inline size_t getInEdgesNum(typename BoostGraphP<Graph>::Vertex v) const { 
+    inline size_t getInEdgesNum(Vertex v) const { 
         return (size_t)boost::in_degree(v, BoostGraphP<Graph>::getGraph()); 
     }
 
      /** \brief Clears all input edges of a vertex \a v. */
-    inline void clearInEdges(typename BoostGraphP<Graph>::Vertex v) { 
+    inline void clearInEdges(Vertex v) { 
         boost::clear_in_edges(v, BoostGraphP<Graph>::getGraph()); 
     }
 
