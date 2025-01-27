@@ -21,6 +21,7 @@
 #include <list>
 #include <set>
 #include <map>
+#include <string>
 
 
 // uncomment to let debug messages
