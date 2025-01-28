@@ -22,6 +22,7 @@
 //==============================================================================
 // Testbed class.
 //==============================================================================
+namespace {
 
 /** \brief Test class. */
 class TsSimpleBuilder_1_Test : public ::testing::Test {
@@ -558,3 +559,6 @@ TEST_F(TsSimpleBuilder_1_Test, buildSimpleTsFromLog4_SingleAcptState1)
     EvLogTSWithFreqsDotWriter dw;
     dw.write(TS_TEST_MODELS_BASE_DIR "ts/TsSimpleBuilder_1_Test-buildSimpleTsFromLog4_SingleAcptState1.gv", *ts);
 }
+
+
+}; // namespace

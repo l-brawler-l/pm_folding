@@ -30,6 +30,9 @@
 // xilib
 #include "xi/types/aliases.h"
 
+namespace {
+
+
 
 using namespace xi::ldopa;
 using namespace xi::ldopa::eventlog;
@@ -1225,3 +1228,5 @@ TEST_F(SQLiteLog_1_Test, sqlHelpersStmtBindText2)
 
 
 #pragma endregion // SQLite Helpers
+
+};

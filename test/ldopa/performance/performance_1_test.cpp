@@ -15,11 +15,13 @@
 
 // test settings file
 // #include "performance_test_settings.h"
-#include "constants.h
+#include "constants.h"
 
 //==============================================================================
 // Testbed class.
 //==============================================================================
+
+namespace {
 
 /** \brief Test class. */
 class Performance_1_Test : public ::testing::Test {
@@ -261,3 +263,4 @@ TEST_F(Performance_1_Test, buildPrefix_coselog1)
     buildPrefixTree(LOG_FILE_COSELOG1, 1, "SELECT * FROM config WHERE persp = 0");
 }
 
+};

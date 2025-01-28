@@ -138,7 +138,7 @@ TEST(TsPtrStateId1, moveSemantics1)
     ITsStateId& st6 = moveSemantics1_helper2();
 
 
-    ITsStateId& st7 = moveSemantics1_helper1();
+    const ITsStateId& st7 = moveSemantics1_helper1();
     bool eq = st5.isEqualTo(&st7);
 }
 
