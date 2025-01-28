@@ -4,8 +4,8 @@
 /// \author    Sergey Shershakov
 /// \version   0.1.0
 /// \date      31.07.2018
-/// \copyright (c) xidv.ru 2014–2018.
-///            This source is for internal use only — Restricted Distribution.
+/// \copyright (c) xidv.ru 2014пїЅ2018.
+///            This source is for internal use only пїЅ Restricted Distribution.
 ///            All rights reserved.
 ///
 /// Generic class template for output graph-based models as a DOT-files.
@@ -23,6 +23,8 @@
 #include <list>
 #include <string>
 #include <fstream>
+#include <cstdint> // uintptr_t
+#include <cinttypes>
 
 
 namespace xi { namespace ldopa { namespace graph {
@@ -63,6 +65,16 @@ struct DefaultDotVisitor
         return std::string(addrBuf);
     }
 
+    /** \brief Creates a HEX representation of the given UintPtr value \a v prefixed by 'x'. */
+    std::string makeUintPtrHexId(std::uintptr_t v)
+    {
+        // https://stackoverflow.com/questions/1042940/writing-directly-to-stdstring-internal-buffers
+        char addrBuf[17];
+        sprintf(addrBuf, "x%x", v);
+        
+        return std::string(addrBuf);
+    }
+
     /** \brief Makes a formatted string correposing to the list of param-values. */
     std::string makeParamValueStr(const ParamValueList& parList)
     {
@@ -97,24 +109,24 @@ struct DefaultDotVisitor
     std::string makeEscapedString(const std::string& s)
     {
         std::string res;
-        res.reserve(s.length() + 2);            // в минимальной версии
+        res.reserve(s.length() + 2);            // пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
             
         res += '\"';
         for (char c : s) 
         {
-            if (c == '"')           // заменям кавычку на посл. \"
+            if (c == '"')           // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ. \"
             {
                 res += "\\\"";      
                 continue;
             }
 
-            if (c == '\\')          // заменяем бэкслеш на два бекслеша
+            if (c == '\\')          // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
             {
                 res += "\\\\";      
                 continue;
             }
 
-            // все остальное просто копируем
+            // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
             res += c;
         }
         res += '\"';
@@ -128,7 +140,7 @@ struct DefaultDotVisitor
     {
         str << "digraph G {\n";
 
-        // если есть метка графа, добавим:
+        // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ:
         if (grLbl)
             str << "    label=\"" << grLbl << "\";\n";
 
@@ -172,13 +184,13 @@ public:
         if (!dfile.is_open())
             throw std::invalid_argument("Can't open dump file for GraphViz");
 
-        // заголовок
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         outputHeader(dfile, gr, grLbl);
 
-        // тело
+        // пїЅпїЅпїЅпїЅ
         outputBody(dfile, gr);
 
-        // хвост
+        // пїЅпїЅпїЅпїЅпїЅ
         outputTail(dfile, gr);
 
         dfile.flush();
