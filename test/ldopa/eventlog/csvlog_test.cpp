@@ -418,6 +418,7 @@ TEST_F(CSVLog_1_Test, extractStrAttr1)
     std::string atr1_4;
     bool aeres1_4 = (*tr1)[0]->getAttrAsStr(4, atr1_4);
     EXPECT_EQ(aeres1_4, true);
+    // TODO: problem with /r on the end of string may occur, need to find a solution for it
     EXPECT_EQ(atr1_4, "654");
 }
 

@@ -1,0 +1,8 @@
+digraph "Test TS" {
+    x73e4bc70 [label="[]"]
+    x73e47ea0 [label="[a]"]
+    x73e4bba0 [label="[b]",peripheries=2]
+    x73e4bc70 -> x73e47ea0 [label="a"]
+    x73e4bc70 -> x73e4bba0 [label="b"]
+    x73e47ea0 -> x73e4bba0 [label="lambda"]
+}

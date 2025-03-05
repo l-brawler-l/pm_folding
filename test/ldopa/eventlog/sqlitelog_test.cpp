@@ -1143,7 +1143,7 @@ TEST_F(SQLiteLog_1_Test, sqlHelpersStmtGetTextColumn5)
 
     std::wstring str = stmt->getWStr(1);        // "Text1"
     EXPECT_EQ(5, str.length());                 // 10 байт НО 5 символов
-    EXPECT_TRUE(std::wstring(L"Text1") == str);
+    EXPECT_EQ(std::wstring(L"Text1"), str);
     
 
     // русский UTF-16
