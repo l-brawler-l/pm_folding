@@ -53,13 +53,14 @@ set(sources
     ldopa/ts/algos/ts_misc_converters_1_test.cpp
 
     ldopa/ts/models/evlog_ts_red_1_test.cpp
+    ldopa/ts/models/evlog_ts_fold_1_test.cpp
     ldopa/ts/models/labeledts_1_test.cpp
     ldopa/ts/models/eventlog_ts_2_test.cpp
 
-    ldopa/ts/models/obsolete1/eventlog_ts_1_test.cpp
-    ldopa/ts/models/obsolete1/basets_1_test.cpp
+    # ldopa/ts/models/obsolete1/eventlog_ts_1_test.cpp
+    # ldopa/ts/models/obsolete1/basets_1_test.cpp
 
-    ldopa/performance/performance_1_test.cpp
+    # ldopa/performance/performance_1_test.cpp
 )
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${sources})
 

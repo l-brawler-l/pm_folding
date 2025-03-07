@@ -29,6 +29,7 @@ set(sources
     source/ldopa/ts/algos/ts_metrics_calc.cpp
     source/ldopa/ts/models/eventlog_ts_stateids.cpp
     source/ldopa/ts/models/evlog_ts_red.cpp
+    source/ldopa/ts/models/evlog_ts_fold.cpp
     source/ldopa/ts/models/eventlog_ts.cpp
     source/ldopa/ts/models/obsolete1/eventlogts.cpp
     source/ldopa/ts/models/obsolete1/basets.cpp
