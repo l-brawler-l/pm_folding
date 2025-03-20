@@ -27,6 +27,8 @@ set(sources
     source/ldopa/ts/algos/obsolete1/eventlogts_grviz_exporter.cpp
     source/ldopa/ts/algos/freq_condenser.cpp
     source/ldopa/ts/algos/ts_metrics_calc.cpp
+    source/ldopa/ts/algos/ts_folding_builder.cpp
+    source/ldopa/ts/algos/cycle_condenser.cpp
     source/ldopa/ts/models/eventlog_ts_stateids.cpp
     source/ldopa/ts/models/evlog_ts_red.cpp
     source/ldopa/ts/models/evlog_ts_fold.cpp

@@ -31,16 +31,25 @@ TEST(EventLogTsParVec1, simpleTSCopyConstr1)
     TS::State st_b = ts1.getOrAddState(pool[{ "b" }]);
 
     // добавляем переходы
-    TS::Transition ta = ts1.getOrAddTrans(st_init, st_a, "a");
-    TS::Transition tb = ts1.getOrAddTransPV(st_init, st_b, "b", 42);
+    ts1.getOrAddTrans(st_init, st_a, "a");
+    ts1.getOrAddTransPV(st_init, st_b, "b", 42);
 
     EXPECT_EQ(3, ts1.getStatesNum());           // 3 состояния
     EXPECT_EQ(2, ts1.getTransitionsNum());      // 2 перехода
+    EXPECT_EQ(2, ts1.getAttributeNum());
+
+    EXPECT_TRUE(ts1.getMapOfAttrsToIndexes().find("a") != ts1.getMapOfAttrsToIndexes().end());
+    EXPECT_TRUE(ts1.getMapOfAttrsToIndexes().find("b") != ts1.getMapOfAttrsToIndexes().end());
 
     // создаем новый — КК
     TS ts2(ts1);
     EXPECT_EQ(3, ts2.getStatesNum());           // тоже 3 состояния
     EXPECT_EQ(2, ts2.getTransitionsNum());      // и 2 перехода
+    EXPECT_EQ(2, ts2.getAttributeNum());
+    
+    EXPECT_TRUE(ts2.getMapOfAttrsToIndexes().find("a") != ts2.getMapOfAttrsToIndexes().end());
+    EXPECT_TRUE(ts2.getMapOfAttrsToIndexes().find("b") != ts2.getMapOfAttrsToIndexes().end());
+    
 
     // а проверим-ка структуру вершин-дуг: совпадает ли?!
     // состояния
@@ -66,18 +75,22 @@ TEST(EventLogTsParVec1, simpleTSCopyConstr1)
     
     EXPECT_TRUE(ts2.getParikhVector(st2_b).second);
 
-    TS::ParikhVector expected;
-    expected["b"] = 42;
-    EXPECT_EQ(expected, ts2.getParikhVector(st2_b).first);         // должен быть верный parikh vector.
+    EXPECT_EQ(42, ts2.getStateAttrCnt(st2_b, "b"));         // должен быть верный parikh vector.
 
     // операция присваивания
     TS ts3(&pool);
     EXPECT_EQ(1, ts3.getStatesNum());
     EXPECT_EQ(0, ts3.getTransitionsNum());
+    EXPECT_EQ(0, ts3.getAttributeNum());
+    EXPECT_TRUE(ts3.getMapOfAttrsToIndexes().empty());
 
     ts3 = ts2;
     EXPECT_EQ(3, ts3.getStatesNum());           // тоже 3 состояния
     EXPECT_EQ(2, ts3.getTransitionsNum());      // и 2 перехода
+    EXPECT_EQ(2, ts3.getAttributeNum());
+    
+    EXPECT_TRUE(ts3.getMapOfAttrsToIndexes().find("a") != ts3.getMapOfAttrsToIndexes().end());
+    EXPECT_TRUE(ts3.getMapOfAttrsToIndexes().find("b") != ts3.getMapOfAttrsToIndexes().end());
 }
 
 //-----------------------------------------------------------------------------
@@ -100,16 +113,15 @@ TEST(EventLogTsParVec1, addMultipleTrans1)
     EXPECT_EQ(3, ts1.getStatesNum());                       // 3 состояния
 
     // добавляем переходы с созданием parikh vector-а и без
-    TS::Transition ta = ts1.getOrAddTransPV(st_init, st_a, "a", 1);
-    TS::Transition tb = ts1.getOrAddTrans(st_init, st_b, "b");    
+    ts1.getOrAddTransPV(st_init, st_a, "a", 1);
+    ts1.getOrAddTrans(st_init, st_b, "b");    
     EXPECT_EQ(2, ts1.getTransitionsNum());                  // 2 перехода
+    EXPECT_EQ(2, ts1.getAttributeNum());
 
     TS::ParikhVectorRes ta_fr = ts1.getParikhVector(st_a);                // для первого есть
     EXPECT_TRUE(ta_fr.second);
 
-    TS::ParikhVector expected;
-    expected["a"] = 1;
-    EXPECT_EQ(expected, ta_fr.first);
+    EXPECT_EQ(1, ts1.getStateAttrCnt(st_a, "a"));
     
     TS::ParikhVectorRes tb_fr = ts1.getParikhVector(st_b);                // для второго нет
     EXPECT_FALSE(tb_fr.second);
@@ -118,16 +130,13 @@ TEST(EventLogTsParVec1, addMultipleTrans1)
     ts1.getOrAddTransPV(st_init, st_a, "a", 2);
     ts1.getOrAddTransPV(st_init, st_b, "b", 2);
     EXPECT_EQ(2, ts1.getTransitionsNum());                  // 2 перехода по-прежнему
+    EXPECT_EQ(2, ts1.getAttributeNum());
 
-    expected.clear();
-    expected["a"] = 3;
     ta_fr = ts1.getParikhVector(st_a);                           // для первого 3
     EXPECT_TRUE(ta_fr.second);
-    EXPECT_EQ(expected, ta_fr.first);
+    EXPECT_EQ(3, ts1.getStateAttrCnt(st_a, "a"));
 
-    expected.clear();
-    expected["b"] = 2;
     tb_fr = ts1.getParikhVector(st_b);                           // для второго 2
     EXPECT_TRUE(tb_fr.second);
-    EXPECT_EQ(expected, tb_fr.first);
+    EXPECT_EQ(2, ts1.getStateAttrCnt(st_b, "b"));
 }
