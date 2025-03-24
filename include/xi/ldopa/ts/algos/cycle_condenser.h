@@ -23,50 +23,32 @@
 
 // ldopa
 #include "xi/ldopa/ts/models/evlog_ts_fold.h"
-#include "xi/ldopa/ts/models/labeledts.h"
 #include "xi/ldopa/utils/elapsed_time.h"
+#include "xi/ldopa/ts/algos/ts_folding_builder.h"
+#include "xi/ldopa/ts/models/eventlog_ts_stateids.h"
 
 
 // std
 #include <set>
+#include <queue>
 
 namespace xi { namespace ldopa { namespace ts {   //
 
-//==============================================================================
-//  class Matrix
-//==============================================================================
-
-class LDOPA_API Matrix
+/** \brief Determines some additional edge property types and helper method  */
+struct EdgeProperty_traits 
 {
-public:
-    typedef ParikhVector::Value Value;
-    typedef ParikhVector::Index Index;
+    struct EdgeProperty
+    {
+        int index;
+    };
+    // Functions
 
-    typedef std::vector<size_t> IndexVector;
-public:
-    Matrix(size_t maxSize);
+    /** \brief Function extracts a trans label from the complex property. */
+    static int getIndex(const EdgeProperty& trp) { return trp.index; }
 
-    ~Matrix();
-public:
-    Matrix(const Matrix& rhs);
-
-    Matrix& operator=(const Matrix& rhs);
-
-public:
-    void PushBack(const ParikhVector& pv);
-
-    Value GetElem(Index i, Index j);
-
-    IndexVector GaussianElimination();
-
-    Matrix GetNullspace();
-protected:
-
-
-protected:
-    std::vector<ParikhVector> _matrix;
-    size_t _maxSize;
-};
+    /** \brief Sets a label of the trans. */
+    static void setIndex(EdgeProperty& trp, int index) { trp.index = index; }
+}; // class EdgeProperty_traits
 
 
 class LDOPA_API CycleCondensedTsBuilder;
@@ -74,16 +56,15 @@ class LDOPA_API CycleCondensedTsBuilder;
 class BaseParikhTrie 
 {
 public:
-    struct EdgeProperty {
-        int index;
-    };
-public:
+    /** \brief Type pack for embedding as graph vertices property. */
+    typedef typename EdgeProperty_traits::EdgeProperty EdgeProperty;
+    
     /** \brief Defining a type for the underlying graph.
      */
     typedef boost::adjacency_list<
         boost::listS,               // out edge storage
         boost::listS,               // vertices storage
-        boost::directedS,      // directed      
+        boost::bidirectionalS,      // directed      
         // properties
         boost::no_property,               // vertex properties
         EdgeProperty
@@ -99,7 +80,7 @@ public:
 */
 class LDOPA_API ParikhTrie :
 public BaseParikhTrie,
-protected gr::BoostGraphP<typename BaseParikhTrie::Graph>
+protected gr::BoostBidiGraphP<typename BaseParikhTrie::Graph>
 {
     friend class CycleCondensedTsBuilder;
 public:
@@ -124,6 +105,9 @@ public:
 
     /** \brief Iterator for transitions modeled by output edges of a graph. */
     typedef typename BaseGraph::OedgeIter OtransIter;
+
+     /** \brief Iterator for transitions modeled by output edges of a graph. */
+     typedef typename BaseGraph::EdgeIter TransIter;
 
     /** \brief A pair of state iterators, which represents a collection of states. */
     typedef typename BaseGraph::VertexIterPair StateIterPair;
@@ -196,13 +180,27 @@ public:
 
     State addState(ParikhVector* pv = nullptr);
 
-    /** \brief Extracts a transition label from a complex transition property
-     *  through the given transition.
-     */
-    Value extractTransLbl(const Transition& t) { return getGraph()[t].index; }
     /** \brief Extracts a parikh vector from state.
      */
     ParikhVector* extractParikhVector(State s);
+
+    /** \brief Return bundled property for the given transition \a tr. */
+    inline const EdgeProperty& getBundle(const Transition& tr) const { return getGraph()[tr]; }
+
+    /** \brief Extracts a transition label from a complex transition property
+     *  through the given transition.
+     */
+    Value extractTransIndex(const Transition& t) const
+    {
+        const EdgeProperty& trBundle = getBundle(t);
+        return  EdgeProperty_traits::getIndex(trBundle);
+    }
+
+    /** \brief Places a label inside labl property whatever it is... */
+    static void emplaceTransIndex(EdgeProperty& trp, Value index)
+    {
+        EdgeProperty_traits::setIndex(trp, index);
+    }
 
     /** \brief Looks over all edges from state \a s
      *  for one labeled with the given label \a lbl. If such a transition exists,
@@ -218,17 +216,18 @@ public:
     StateTrans getOrAddTargetState(State s, Value lbl, ParikhVector* pv = nullptr);
 
     /** \brief Returns the source State (vertex) of the given transitions \param t. */
-    State getSrcState(const Transition& t) { return BaseGraph::getSrcVertex(t); }
+    State getSrcState(const Transition& t) const { return BaseGraph::getSrcVertex(t); }
 
     /** \brief Returns the target State (vertex) of the given transitions \param t. */
-    State getTargState(const Transition& t) { return BaseGraph::getTargVertex(t); }
+    State getTargState(const Transition& t) const { return BaseGraph::getTargVertex(t); }
 public:
 
     void build();
 
-    void processParikhVector(State s);
-
     void TandemSearch(Matrix& pvDiffs, unsigned int k);
+protected:
+
+    void processParikhVector(State s);
 
 protected:
     /** \brief Adds into the TS a new transition between the given states \a s and \a t,
@@ -239,14 +238,15 @@ protected:
      */
     Transition addTransitionInternal(State s, State t, Value lbl)
     {
-        //Transition trans = addGraphEdge(s, t);
         Transition trans = BaseGraph::addEdge(s, t);
-        getGraph()[trans].index =  lbl;
+        emplaceTransIndex(getGraph()[trans], lbl);
 
         return trans;
     }
 
     void Recur(Matrix& pvDiffs, State v1, State v2, unsigned int i);
+
+    void Recur(Matrix& pvDiffs, State v, unsigned int i);
 
 protected:
     TS* _ts;
@@ -289,8 +289,12 @@ public:
     /** \brief Constructor initializes with all necessary data.
      *
      *  \param ts is TS to be condensed.
+     * 
+     *  \param sf is a state function that will be used with builded TS.
+     * 
+     *  \param stIDsPool is a pool that builded TS will use.
      */
-    CycleCondensedTsBuilder(TS* ts); // , Uint numOfTraces);
+    CycleCondensedTsBuilder(TS* ts, CondensedStateFunc* sf, FixedIntListStateIdsPool* stIDsPool);
 
 
     /** \brief Destructor. */
@@ -302,13 +306,14 @@ protected:
 
 
 public:
-    /** \brief Builds a condensed TS using a \a k parameter as a boundedness for cycles.
+    /** \brief Builds a condensed TS using a \a k parameter as a boundedness for cycles
+     * and \a newStIDsPool as a pool which will be used by the new TS.
      *
      *  \returns a TS if built successfully, otherwise nullptr.
      *  A newly built TS is managed by the builder according to the rules,
      *  presented in the class definition.
      */
-    TS* build(unsigned int k);
+    TS* build(unsigned int k); 
 
     /** \brief Detaches and returns the TS built at the previous call of build() method. */
     TS* detach();
@@ -323,7 +328,7 @@ public:
     TS* getTS() { return _ts; }
 
     /** \brief Const overload for getTS(). */
-    const TS* getTS() const { return _ts; }
+    const TS* getTS() const { return  _ts; }
 
     /** \brief Returns a ptr to the source TS. */
     TS* getSrcTS() { return _srcTs; }
@@ -335,9 +340,20 @@ public:
     double getBoundedness() const { return _k; }
 
 protected:
+    void copyTS();
+
+    TS::State copyState(TS::State stOrig);
+
+protected:
 
     /** \brief Src TS to be condensed. */
     TS* _srcTs;
+
+    /** \brief Stores a special state function. */
+    CondensedStateFunc* _sf;
+
+    /** \brief Stores a ptr to a pool of state IDs. */
+    FixedIntListStateIdsPool* _stIDsPool;
 
     /** \brief Resulting condensed TS. */
     TS* _ts;
@@ -345,13 +361,10 @@ protected:
     /** \brief Stores a boundedness for cycles. */
     unsigned int _k;
 
-    /** \brief Stores parikh trie. */
-    ParikhTrie* _ptrie;
-
 }; // class CycleCondensedTsBuilder
 
 
 }}} // namespace xi { namespace ldopa { namespace ts {
 
 
-#endif // XI_LDOPA_TRSS_ALGOS_TS_FREQ_CONDENSER_H_
+#endif // XI_LDOPA_TRSS_ALGOS_TS_CYCLE_CONDENSER_H_

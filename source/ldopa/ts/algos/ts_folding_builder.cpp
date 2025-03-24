@@ -1,10 +1,144 @@
 #include "xi/ldopa/ts/algos/ts_folding_builder.h"
 
 namespace xi { namespace ldopa { namespace ts {
+
+
+
+
+//==============================================================================
+// class CondensedStateFunc
+//==============================================================================
+
+
+CondensedStateFunc::CondensedStateFunc(IEventLog* log, 
+    FixedIntListStateIdsPool* stIDsPool, 
+    const AttrIndexMap* attrInds, const Matrix& basis)
+    : _log(log)
+    , _stIDsPool(stIDsPool)
+    , _basis(basis)
+    , _attrInds(attrInds)
+{
+
+}
+
+//------------------------------------------------------------------------------
+
+const IStateId* CondensedStateFunc::makeState(IEventTrace* tr, int eventNum,
+    IEventLog::Attribute& actAttr)
+{
+    ParikhVector pv;
+    makeParikhVector(tr, 0, eventNum, actAttr, pv);
+    return makeStateInternal(pv);
+}
+
+//------------------------------------------------------------------------------
+
+const IStateId* CondensedStateFunc::makeState(int traceNum, int eventNum,
+    IEventLog::Attribute& actAttr)
+{
+    ParikhVector pv;
+    makeParikhVector(traceNum, 0, eventNum, actAttr, pv);
+    return makeStateInternal(pv);
+}
+
+//------------------------------------------------------------------------------
+
+const IStateId* CondensedStateFunc::makeState(const ParikhVector& pv)
+{
+    return makeStateInternal(pv);
+}
+
+//------------------------------------------------------------------------------
+
+const IStateId* CondensedStateFunc::makeStateInternal(const ParikhVector& pv)
+{
+    FixedIntListStateId av;
+
+    for (const ParikhVector& bas_pv : _basis.getParikhVectors()) {
+        ParikhVector::Value scalar = GetScalar(pv, bas_pv);
+
+        av.getAttrs().push_back(scalar);
+    }
+
+    const FixedIntListStateId* stID = (*_stIDsPool)[av];
+    return stID;
+}
+
+//------------------------------------------------------------------------------
+
+void CondensedStateFunc::makeParikhVector(IEventTrace* tr, int beg, int end,
+    IEventLog::Attribute& actAttr, ParikhVector& pv)
+{
+    if (!tr)
+        throw LdopaException("Error getting trace.");
+    if (!_attrInds)
+        throw LdopaException("Error getting index of attribute.");
+
+    for (int eventNum = beg; eventNum < end; ++eventNum)
+    {
+        IEvent* ev = tr->getEvent(eventNum);
+        if (!ev)
+            throw LdopaException("Error getting event.");
+        if (!ev->getAttr(_actAttrID.c_str(), actAttr))
+            throw LdopaException("Error getting event's attribute.");
+
+        AttrIndexMap::const_iterator ind_it = _attrInds->find(actAttr); 
+        if (ind_it == _attrInds->end()) 
+            throw LdopaException("Error getting index of attribute.");
+        
+        // наконец, атрибут взят
+        pv.AddAttrCnt((*ind_it).second, 1);
+    }
+}
+
+//------------------------------------------------------------------------------
+void CondensedStateFunc::makeParikhVector(int traceNum, int beg, int end,
+    IEventLog::Attribute& actAttr, ParikhVector& pv)
+{
+    if (!_attrInds)
+        throw LdopaException("Error getting index of attribute.");
+    
+    //===<< предыдущий вариант с процедурным интерфейсом >>===
+    for (int eventNum = beg; eventNum < end; ++eventNum)
+    {
+        if (!_log->getEventAttr(traceNum, eventNum, _actAttrID.c_str(), actAttr))
+            throw LdopaException("Another event doesn't have the Activity attribute.");
+
+        AttrIndexMap::const_iterator ind_it = _attrInds->find(actAttr); 
+        if (ind_it == _attrInds->end()) 
+            throw LdopaException("Error getting index of attribute.");
+        
+        // наконец, атрибут взят
+        pv.AddAttrCnt((*ind_it).second, 1);
+    }
+}
+
+//------------------------------------------------------------------------------
+
+void CondensedStateFunc::reset()
+{
+    // TODO: здесь по флагу как раз можно сбрасывать предыдущий пул
+    
+    _log->open();               // открываем, вдруг не открыт
+    
+    // если ид атрибута "Активити" не было задано пользователем руками,
+    // попробуем взять его из лога; если же и там баранка, все на этом
+    if (_actAttrID.empty())
+    {
+        _actAttrID = _log->getEvActAttrId();
+        if (_actAttrID.empty())
+            throw LdopaException("Can't prepare CondensedStateFunc: ID for Activity attribute not set.");
+    }
+}
+
+
+
+
+
+
 //==============================================================================
 // class TsFoldBuilder
 //==============================================================================
-
 
 
 TsFoldBuilder::TsFoldBuilder(IEventLog* log, ITsStateFunc* sf, IStateIDsPool* stIDsPool)

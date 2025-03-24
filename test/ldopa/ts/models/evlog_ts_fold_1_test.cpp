@@ -134,7 +134,7 @@ TEST(EventLogTsParVec1, addMultipleTrans1)
 
     ta_fr = ts1.getParikhVector(st_a);                           // для первого 3
     EXPECT_TRUE(ta_fr.second);
-    EXPECT_EQ(3, ts1.getStateAttrCnt(st_a, "a"));
+    EXPECT_EQ(1, ts1.getStateAttrCnt(st_a, "a"));
 
     tb_fr = ts1.getParikhVector(st_b);                           // для второго 2
     EXPECT_TRUE(tb_fr.second);

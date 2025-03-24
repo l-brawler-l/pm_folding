@@ -22,46 +22,10 @@
 
 // ldopa
 #include "xi/ldopa/ts/models/eventlog_ts.h"
+#include "xi/ldopa/ts/models/parikh_vector.h"
 
 
 namespace xi { namespace ldopa { namespace ts {
-
-
-class LDOPA_API ParikhVector
-{
-public:
-    typedef int Value;
-    typedef size_t Index;
-public:
-    ParikhVector();
-
-    ~ParikhVector();
-public:
-    ParikhVector(const ParikhVector& rhs);
-
-    ParikhVector& operator=(const ParikhVector&);
-
-public:
-    Value GetAttrCnt(Index index) const;
-
-    void AddAttrCnt(Index index, Value cnt);
-
-    void Resize(size_t count);
-
-    void ForceResize(size_t count);
-
-    void SubstractSuffix(Index k, const ParikhVector& rhs);
-
-public:
-    friend ParikhVector GetDiff(ParikhVector lhs, const ParikhVector& rhs);
-
-
-protected:
-    std::vector<Value> _v;
-};
-
-
-
 /** \brief Definition for Event Log TS containing additional attributes.
  *
  *  Additional attributes: Parikh vectors for each state.
@@ -69,7 +33,19 @@ protected:
 class LDOPA_API EvLogTSWithParVecs : public BaseEventLogTS
 {
 public:
-#pragma region Type Definitions
+    //-----<Types>-----
+
+    /** \brief Enumerates setting bit number constants. */
+    enum
+    {
+        SET_IGNORE_DIFFS = 0,     ///< Determines whether parikh vector differences are ignored.
+        SET__LAST                       ///< Technical internal value used to determine size for underlying bitset
+    };
+
+    /** \brief A typename for bitset type for storing settings */
+    typedef std::bitset<SET__LAST> SettingsBitset;
+
+    
     typedef BaseEventLogTS Base;
 
     typedef ParikhVector::Value Value;
@@ -91,15 +67,30 @@ public:
     /** \brief Datatype for an integer resulting value that can be undefined. */
     typedef std::pair<Index, bool> IndexRes;
 
-#pragma endregion // Type Definitions
+public:
+    //-----<Const>-----
+
+    // default settings
+    static const unsigned int DEF_SETTINGS =
+        (0x1 << SET_IGNORE_DIFFS          // Ignore differences by default.
+        );
 
 public:
     /** \brief Constructor initializes the TS by a pool of events.
      *
      *  \param stIDsPool is a (possibly shared) pool of state IDs.
      */
-    EvLogTSWithParVecs(IStateIDsPool* stIDsPool); // , bool copyPool = false);
+    EvLogTSWithParVecs(IStateIDsPool* stIDsPool);
 
+    /** \brief Constructor initializes the TS by a pool of events.
+     *
+     *  \param stIDsPool is a (possibly shared) pool of state IDs.
+     * 
+     *  \param attrInds is a map that connects attributes to indexes in parikh vectors.
+     *  Useful, if you want to set the order of attributes to determine parikh vector's form.
+     * 
+     */
+    EvLogTSWithParVecs(IStateIDsPool* stIDsPool, const AttrIndexMap& attrInds);
 
     /** \brief Copy constructor. 
      *
@@ -108,7 +99,7 @@ public:
     EvLogTSWithParVecs(const EvLogTSWithParVecs& that);
 
     /** \brief Copy constructor. */
-    EvLogTSWithParVecs& operator=(const EvLogTSWithParVecs& that);
+    // EvLogTSWithParVecs& operator=(const EvLogTSWithParVecs& that);
 
     /** \brief Virtual Destructor. */
     virtual ~EvLogTSWithParVecs();
@@ -155,13 +146,13 @@ public:
      */
     ParikhVectorPtr getParikhVectorPtr(State s);
 
-    /** \brief Sets a new value \a pv of parikh vector for the given state \a s. */
-    void setParikhVector(State s, const ParikhVector& pv);
+    /** \brief Sets a new value \a pv of parikh vector ptr for the given state \a s. */
+    void setParikhVector(State s, const ParikhVector* pv);
 
     /** \brief Returns count of different attributes in TS. */
     size_t getAttributeNum() const { return _attrInds.size(); }
 
-    /** \brief Returns a map that connects attributes to indexes in parikh vectors */
+    /** \brief Returns a map that connects attributes to indexes in parikh vectors. */
     const AttrIndexMap& getMapOfAttrsToIndexes() const { return _attrInds; }
 
     /** \brief Returns how many times attribute \a lbl has been encountered on 
@@ -172,6 +163,15 @@ public:
     // /**  \brief Adds ttribute \a lbl \a lblCnt times to Parikh Vector of state \a s.
     //  */
     // void addActToParikhVector(State s, const Attribute& act, Value lblCnt);
+
+public:
+    //-----<Helpers for work with settings>-----
+
+    /** \brief Getter for SET_IGNORE_DIFFS option. */
+    bool isIgnoreDiffs() const { return _settings[SET_IGNORE_DIFFS]; }
+
+    /** \brief Setter for SET_IGNORE_DIFFS option. */
+    void setIgnoreDiffs(bool f) { _settings[SET_IGNORE_DIFFS] = f; }
 
 protected:
     //----<Construction helpers>----
@@ -193,9 +193,17 @@ protected:
     Index GetOrAddAttrIndex(const Attribute& lbl);
 
 protected:
+    /** \brief Settings (flags) object. */
+    SettingsBitset _settings;
+
     /** \brief Stores a map of states to parikh vector. */
     StateParikhVectorMap _stateParVec;
+
+    /** \brief Stores a map that connects attributes to indexes in parikh vectors. */
     AttrIndexMap _attrInds;
+
+    /** \brief Stores parikh vectors differences rhat equivalent to zero. */
+    Matrix _diffs;
 
 }; // class EvLogTSWithFreqs
 

@@ -161,5 +161,178 @@ const AttrListStateId* AttrListStateIDsPool::operator[](const AttrListStateId& s
 
 
 
+//==============================================================================
+// class FixedIntListStateId
+//==============================================================================
+
+FixedIntListStateId::FixedIntListStateId(size_t limit)
+{
+    _attrs.resize(limit, 0);
+}
+
+//------------------------------------------------------------------------------
+
+bool FixedIntListStateId::operator==(const FixedIntListStateId& that) const
+{
+    size_t minSize = std::min(_attrs.size(), that._attrs.size());
+    for (size_t i = 0; i < minSize; ++i)
+        if (_attrs[i] != that._attrs[i])
+            return false;
+
+    for (size_t i = minSize; i < _attrs.size(); ++i)
+        if (_attrs[i] != 0)
+            return false;
+    
+    for (size_t i = minSize; i < that._attrs.size(); ++i)
+        if (that._attrs[i] != 0)
+            return false;
+    return true;   // ok, as it reaches this point
+}
+
+//------------------------------------------------------------------------------
+
+FixedIntListStateId::FixedIntListStateId(const std::initializer_list<Value>& v)
+{
+    for (auto itm : v)
+        _attrs.push_back(itm);
+}
+
+//------------------------------------------------------------------------------
+
+bool FixedIntListStateId::operator<(const FixedIntListStateId& that) const
+{
+    size_t minSize = std::min(_attrs.size(), that._attrs.size());
+    // well, the numbers of elements are equal, so one need to compare all elements
+    for (size_t i = 0; i < minSize; ++i)
+    {
+        if (_attrs[i] < that._attrs[i])
+            return true;
+        else if (_attrs[i] > that._attrs[i])
+            return false;
+
+        // if both elements are equal, one nothing to say whose is lesser
+    }
+
+    for (size_t i = minSize; i < _attrs.size(); ++i)
+    {
+        if (_attrs[i] < 0)
+            return true;
+        else if (_attrs[i] > 0)
+            return false;
+    }
+    for (size_t i = minSize; i < that._attrs.size(); ++i)
+    {
+        if (that._attrs[i] > 0)
+            return true;
+        else if (that._attrs[i] < 0)
+            return false;
+    }
+
+    // finally, if we left the loop, it means both id are equal
+    // by definition *this is not lesser than that, so...
+
+    return false;
+}
+
+//------------------------------------------------------------------------------
+
+bool FixedIntListStateId::isEqualTo(const IStateId* that) const
+{
+    // прикастовываем указатель к нашему типу, если не получается — не равны
+    const FixedIntListStateId* typedRhv = dynamic_cast<const FixedIntListStateId*>(that);
+    if (!typedRhv)
+        return false;
+
+    return *this == *typedRhv;
+}
+
+//------------------------------------------------------------------------------
+
+bool FixedIntListStateId::isLessThan(const IStateId* that) const
+{
+    const FixedIntListStateId* typedRhv = dynamic_cast<const FixedIntListStateId*>(that);
+    return *this < *typedRhv;
+}
+
+//------------------------------------------------------------------------------
+
+std::string FixedIntListStateId::toString() const
+{
+
+    std::string lbl = "[";
+    bool first = true;
+
+    //const TsPtrStateId& stId = getStateId(st);
+    for (auto it = _attrs.begin(); it != _attrs.end(); ++it)
+    {
+        if (!first)
+            lbl += ", ";
+        else
+            first = false;
+
+        //const std::string* st = (const std::string*)*it;
+        //lbl += (*st);
+        lbl += std::to_string(*it);
+    }
+
+    lbl += "]";
+
+    return lbl;
+}
+
+
+//==============================================================================
+// class FixedIntListStateIdsPool
+//==============================================================================
+
+
+
+//------------------------------------------------------------------------------
+
+FixedIntListStateIdsPool::FixedIntListStateIdsPool()
+{
+    _poolSet = new StateIDsSet();
+}
+
+//------------------------------------------------------------------------------
+
+FixedIntListStateIdsPool::FixedIntListStateIdsPool(size_t limit)
+    : _limit(limit)
+{
+    _poolSet = new StateIDsSet();
+}
+
+//------------------------------------------------------------------------------
+
+FixedIntListStateIdsPool::~FixedIntListStateIdsPool()
+{
+    delete _poolSet;
+}
+
+//------------------------------------------------------------------------------
+
+const IStateId* FixedIntListStateIdsPool::getInitStateId()
+{
+    return (*this)[FixedIntListStateId(_limit)];
+    //return insert(FixedIntListStateId());
+}
+
+//------------------------------------------------------------------------------
+
+size_t FixedIntListStateIdsPool::getSize() const
+{
+    return _poolSet->size();
+}
+
+const FixedIntListStateId* FixedIntListStateIdsPool::operator[](const FixedIntListStateId& stId)
+{
+    std::pair<StateIDsSetIter, bool> res = _poolSet->insert(stId);
+
+    // address of an str object that is got through dereference of iter
+    return &(*(res.first));     
+}
+
+
+
 
 }}} // namespace xi { namespace ldopa { namespace ts {

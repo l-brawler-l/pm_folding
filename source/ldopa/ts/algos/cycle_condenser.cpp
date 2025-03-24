@@ -3,152 +3,6 @@
 
 namespace xi { namespace ldopa { namespace ts {   //
 
-//==============================================================================
-//  class Matrix
-//==============================================================================
-
-Matrix::Matrix(size_t maxSize)
-    : _maxSize(maxSize)
-{
-
-}
-
-//------------------------------------------------------------------------------
-
-Matrix::~Matrix()
-{
-
-}
-
-//------------------------------------------------------------------------------
-
-Matrix::Matrix(const Matrix& rhs)
-    : _matrix(rhs._matrix)
-{
-
-}
-
-//------------------------------------------------------------------------------
-
-Matrix& Matrix::operator=(const Matrix& rhs)
-{
-    Matrix tmp(rhs);
-    std::swap(tmp, *this);
-
-    return *this;
-}
-
-//------------------------------------------------------------------------------
-
-void Matrix::PushBack(const ParikhVector& pv)
-{
-    _matrix.push_back(pv);
-    // _matrix.back().Resize(_maxSize);
-}
-
-//------------------------------------------------------------------------------
-
-Matrix::Value Matrix::GetElem(Index i, Index j)
-{
-    return _matrix[i].GetAttrCnt(j);
-}
-
-//------------------------------------------------------------------------------
-
-Matrix::IndexVector Matrix::GaussianElimination()
-{
-    size_t N = _matrix.size();
-    size_t M = _maxSize;
-    size_t cur_row = 0;
-
-    IndexVector ans;
-    for (size_t k = 0; k < M; ++k)
-    {
-        if (cur_row >= N) {
-            ans.push_back(k);
-            continue;
-        }
-
-        size_t i_max = cur_row;
-        Value v_max = GetElem(i_max, k);
-
-        for (size_t i = cur_row + 1; i < N; ++i) 
-        {
-            if (abs(GetElem(i, k)) > v_max) {
-                v_max = GetElem(i, k);
-                i_max = i;
-            }
-        }
-
-        if (v_max == 0) {
-            ans.push_back(k);
-            continue;
-        }
-
-        if (i_max != cur_row) {
-            std::swap(_matrix[i_max], _matrix[cur_row]);
-        }
-
-        for (size_t i = 0; i < N; ++i) 
-        {
-            if (i == cur_row) {
-                continue;
-            }
-            _matrix[i].SubstractSuffix(k, _matrix[cur_row]);
-        }
-        ++cur_row;
-    }
-
-    return ans;
-}
-
-//------------------------------------------------------------------------------
-
-Matrix Matrix::GetNullspace()
-{
-    IndexVector freeVars = GaussianElimination();
-
-    IndexVector pivotVars;
-    pivotVars.reserve(_maxSize - freeVars.size());
-
-    size_t fv_ind = 0; // индекс по вектору свободных переменных
-
-    Matrix nullspace(_maxSize);
-    nullspace._matrix.reserve(freeVars.size()); // мы знаем, что в базисе будет столько элементов
-
-    for (size_t i = 0; i < _matrix.size() && fv_ind < freeVars.size(); ++i) {
-        if (i != freeVars[fv_ind]) { // если главная переменная:
-            pivotVars.push_back(i); // то сохраняем в отдельный массив
-            continue;
-        }
-        Value factor = 1; 
-        // считаем наименьшее такое число, чтобы в итоговом векторе
-        // не было дробных чисел.
-        for (size_t j = 0; j < pivotVars.size(); ++j) {
-            Value free = GetElem(j, i);
-            Value pivot = GetElem(j, pivotVars[j]);
-
-            Value j_factor = std::lcm(free, pivot) / free;
-            factor = std::lcm(factor, j_factor);
-        }
-        ParikhVector solution;
-        solution.AddAttrCnt(i, factor);
-        // считаем сам вектор
-        for (size_t j = 0; j < pivotVars.size(); ++j) {
-            Value free = GetElem(j, i);
-            Value pivot = GetElem(j, pivotVars[j]);
-
-            Value coef = (free * factor) / pivot;
-            solution.AddAttrCnt(pivotVars[j], coef);
-        }
-        // добавляем в ответ
-        nullspace.PushBack(solution);
-        // смотрим на следующий индекс свободной переменной
-        ++fv_ind;
-
-    }
-    return nullspace;
-}
 
 //==============================================================================
 // class ParikhTrie
@@ -161,7 +15,6 @@ ParikhTrie::ParikhTrie(TS* ts) : _ts(ts)
     _stPV = new StateToPVMap();
     _initDom = new Domain();
     _maxv = 0;
-    build();
 }
 
 //------------------------------------------------------------------------------
@@ -200,9 +53,13 @@ ParikhTrie::State ParikhTrie::addState(ParikhVector* pv)
 ParikhTrie::TransRes ParikhTrie::getTrans(State s, Value lbl)
 {
     OtransIter tCur, tEnd;
-    for (boost::tie(tCur, tEnd) = getOutTransitions(s); tCur != tEnd; ++tCur)
+    boost::tie(tCur, tEnd) = getOutTransitions(s);
+    size_t chCur = 0, chEnd = BaseGraph::getOutEdgesNum(s);
+    // ужасный костыль, но без него tCur почему-то не оказывается
+    // равным tEnd и вылезает ошибка.
+    for (; tCur != tEnd && chCur < chEnd; ++tCur, ++chCur)
     {
-        Value cLbl = extractTransLbl(*tCur);    
+        Value cLbl = extractTransIndex(*tCur);    
         if (cLbl == lbl)
         {
             return std::make_pair(*tCur, true);
@@ -244,7 +101,7 @@ void ParikhTrie::build() {
 //------------------------------------------------------------------------------
 
 void ParikhTrie::processParikhVector(TS::State ts_s) {
-    State src = _initSt;
+    State src = *_initSt;
 
     ParikhVector* pv = _ts->getParikhVectorPtr(ts_s);
     size_t max_cnt = _ts->getAttributeNum();
@@ -267,8 +124,8 @@ void ParikhTrie::processParikhVector(TS::State ts_s) {
 
         if (i == 0) {
             auto dom_it = _initDom->find(attr_cnt);
-            if (dom_it != _initDom->end()) {
-                (*dom_it).second = st_tr.second;
+            if (dom_it == _initDom->end()) {
+                _initDom->insert(std::make_pair(attr_cnt, st_tr.second));
             }
         }
     }
@@ -297,9 +154,16 @@ void ParikhTrie::TandemSearch(Matrix& pvDiffs, unsigned int k)
                 }
 
                 ParikhTrie::State v1 = getTargState((*it1).second);
-                ParikhTrie::State v2 = getTargState((*it2).second);
-                Recur(pvDiffs, v1, v2, i);
+
+                if (m == 0) {
+                    Recur(pvDiffs, v1, i);
+                } else {
+                    ParikhTrie::State v2 = getTargState((*it2).second);
+                    Recur(pvDiffs, v1, v2, i);
+                }
+                
             }
+            used[m] = true;
             m += i;
         } 
     }
@@ -314,16 +178,17 @@ void ParikhTrie::Recur(Matrix& pvDiffs, ParikhTrie::State v1, ParikhTrie::State 
     ParikhVector* pv2 = extractParikhVector(v2);
     if (pv1 && pv2) {  // если зашли в "листья" графа
         pvDiffs.PushBack(GetDiff(*pv1, *pv2));
+        return;
     }
     // иначе
     ParikhTrie::OtransIter tr1Cur, tr1End, tr2Cur, tr2End;
     boost::tie(tr1Cur, tr1End) = getOutTransitions(v1);
-    boost::tie(tr2Cur, tr2End) = getOutTransitions(v2);
     for (; tr1Cur != tr1End; ++tr1Cur) {
-        Value index1 = extractTransLbl(*tr1Cur);
+        Value index1 = extractTransIndex(*tr1Cur);
 
+        boost::tie(tr2Cur, tr2End) = getOutTransitions(v2);
         for (; tr2Cur != tr2End; ++tr2Cur) {
-            Value index2 = extractTransLbl(*tr2Cur);
+            Value index2 = extractTransIndex(*tr2Cur);
             
             if (static_cast<unsigned int>(abs(index1 - index2)) % i == 0) {
                 ParikhTrie::State new_v1 = getTargState(*tr1Cur);
@@ -334,15 +199,57 @@ void ParikhTrie::Recur(Matrix& pvDiffs, ParikhTrie::State v1, ParikhTrie::State 
     }
 }
 
+//------------------------------------------------------------------------------
+
+void ParikhTrie::Recur(Matrix& pvDiffs, ParikhTrie::State v, unsigned int i) 
+{
+    ///TODO: отдельный случай, когда вершины равны
+    ParikhVector* pv = extractParikhVector(v);
+    if (pv) {  // если зашли в "листья" графа
+        // то выходим, нам неинтересны нулевые векторы
+        return;
+    }
+    // иначе
+    ParikhTrie::OtransIter tr1Cur, trEnd, tr2Cur;
+    boost::tie(tr1Cur, trEnd) = getOutTransitions(v);
+    for (; tr1Cur != trEnd; ++tr1Cur) {
+        Value index1 = extractTransIndex(*tr1Cur);
+
+        tr2Cur = tr1Cur;
+        ParikhTrie::State new_v = getTargState(*tr1Cur);
+        Recur(pvDiffs, new_v, i);
+
+        ++tr2Cur;
+
+        for (; tr2Cur != trEnd; ++tr2Cur) {
+            Value index2 = extractTransIndex(*tr2Cur);
+            
+            if (static_cast<unsigned int>(abs(index1 - index2)) % i == 0) {
+                ParikhTrie::State new_v1 = getTargState(*tr1Cur);
+                ParikhTrie::State new_v2 = getTargState(*tr2Cur);
+                Recur(pvDiffs, new_v1, new_v2, i);
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
 //==============================================================================
 // class CycleCondensedTsBuilder
 //==============================================================================
 
-CycleCondensedTsBuilder::CycleCondensedTsBuilder(TS* ts)
+CycleCondensedTsBuilder::CycleCondensedTsBuilder(TS* ts, 
+    CondensedStateFunc* sf, FixedIntListStateIdsPool* stIDsPool)
     : _srcTs(ts)
+    , _sf(sf)
+    , _stIDsPool(stIDsPool)
     , _ts(nullptr)
     , _k(0)
-    , _ptrie(nullptr)
 {
 
 }
@@ -364,12 +271,6 @@ void CycleCondensedTsBuilder::cleanTS()
         delete _ts;
         _ts = nullptr;
     }
-
-    if (_ptrie)
-    {
-        delete _ptrie;
-        _ptrie = nullptr;
-    }
 }
 
 
@@ -390,23 +291,43 @@ CycleCondensedTsBuilder::TS* CycleCondensedTsBuilder::detach()
 
 CycleCondensedTsBuilder::TS* CycleCondensedTsBuilder::build(unsigned int k)
 {
+    cleanTS();
+
     if (!_srcTs)
-        throw LdopaException("No source (full) TS set.");
+        throw LdopaException("Can't build a TS: no source TS is set.");
+    if (!_sf)
+        throw LdopaException("Can't build a TS: no state function is set.");
+    if (!_stIDsPool)
+        throw LdopaException("Can't build a TS: no state IDs pool is set.");
+   
 
     _k = k;
 
-    // очищаем предыдущую TS, если была
-    cleanTS();
+    _sf->reset();
+    
 
     XI_LDOPA_ELAPSEDTIME_START(timer)
 
-    _ts = new TS(*_srcTs);                                  // создаем точную копию пока
-    _ptrie = new ParikhTrie(_srcTs);
-    _ptrie->build();
+
+    // Создаем префиксное дерево Париха
+    ParikhTrie ptrie(_srcTs); 
+    ptrie.build();
+
+    // Находим все разницы в векторах Париха, которые нужно "занулить"
     Matrix pvDiffs(_srcTs->getAttributeNum());
-    _ptrie->TandemSearch(pvDiffs, _k);
+    ptrie.TandemSearch(pvDiffs, _k);
+
+    // Находим базис регионов
     Matrix basis = pvDiffs.GetNullspace();
 
+    // Добавляем его в функцию, по которой будем строить новый TS
+    _sf->setBasis(basis);
+    _stIDsPool->setLimit(basis.getParikhVectors().size());
+
+    _ts = new TS(_stIDsPool, _srcTs->getMapOfAttrsToIndexes());
+
+    // Копируем старый TS, применяя к состояниям функцию _sf.
+    copyTS();
 
 
     XI_LDOPA_ELAPSEDTIME_STOP(timer)
@@ -416,6 +337,54 @@ CycleCondensedTsBuilder::TS* CycleCondensedTsBuilder::build(unsigned int k)
 
 
 //------------------------------------------------------------------------------
+
+void CycleCondensedTsBuilder::copyTS()
+{
+    std::queue<std::pair<TS::State, TS::State>> q;
+
+    TS::State origInit = _srcTs->getInitState();
+    TS::State curInit = copyState(origInit);
+    // TS::State curInit = _ts->getInitState();
+
+    q.push(std::make_pair(curInit, origInit));
+
+    while (!q.empty()) {
+
+        TS::State cur, orig;
+        boost::tie(cur, orig) = q.front();
+        q.pop();
+
+        TS::OtransIter origBeg, origEnd;
+        boost::tie(origBeg, origEnd) = _srcTs->getOutTransitions(orig);
+
+        for (; origBeg != origEnd; ++origBeg) {
+            const TS::Attribute& lbl = _srcTs->getTransLbl(*origBeg);
+
+            TS::State origTrg = _srcTs->getTargState(*origBeg);
+            TS::State curTrg = copyState(origTrg);
+
+            TS::Transition t = _ts->getOrAddTrans(cur, curTrg, lbl);
+
+            q.push(std::make_pair(curTrg, origTrg));
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+
+CycleCondensedTsBuilder::TS::State CycleCondensedTsBuilder::copyState(
+    TS::State stOrig) 
+{
+    const TS::ParikhVectorRes& pv_res = _srcTs->getParikhVector(stOrig);
+    if (!pv_res.second) {
+        throw LdopaException("State in TS does not have parikh vector.");
+    }
+
+    const IStateId* stID = _sf->makeState(pv_res.first);
+    TS::State s = _ts->getOrAddState(stID);
+
+    return s;
+}
 
 
 }}} // namespace xi { namespace ldopa { namespace ts {

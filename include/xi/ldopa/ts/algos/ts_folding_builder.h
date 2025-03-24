@@ -31,6 +31,102 @@
 
 
 namespace xi { namespace ldopa { namespace ts {
+
+//==============================================================================
+//  class CondensedStateFunc
+//==============================================================================
+
+/** \brief State function based on a cycle condenser algorithm. 
+ * For two states that are equal in each region basis, the function will return 
+ * same State Id.
+ *
+ *  Uses FixedIntListStateIdsPool class for instantiate stateIDs.
+ *
+ *  #thinkof: возможно, стоит написать отдельные классы для StateId и 
+ * Pool, потому что по сути сейчас пул хранит векторы от аттрибутов, а
+ * здесь это просто числа.
+ */
+class LDOPA_API CondensedStateFunc : public ITsStateFunc { //ITsStateFunc {
+public:
+    // types
+    typedef eventlog::IEventLog IEventLog;        ///< Alias for IEventLog2.
+    typedef eventlog::IEventTrace IEventTrace;    ///< Alias for IEventTrace2.
+    typedef eventlog::IEvent IEvent;              ///< Alias for IEvent2.
+
+    typedef EvLogTSWithParVecs::AttrIndexMap AttrIndexMap;
+
+public:
+    //----<Constructors and destructor>----
+    /** \brief Constructor initializes the function with a ptr to a state IDs pool. */
+    CondensedStateFunc(IEventLog* log, FixedIntListStateIdsPool* stIDsPool, 
+        const AttrIndexMap* attrInds, const Matrix& basis = Matrix());
+protected:
+    CondensedStateFunc(const CondensedStateFunc&);                 // Prevent copy-construction
+    CondensedStateFunc& operator=(const CondensedStateFunc&);      // Prevent assignment
+
+public:
+    //----<ITsStateFunc Implementation>----
+    virtual const IStateId* makeState(int traceNum, int eventNum,
+        IEventLog::Attribute& actAttr) override;
+
+    virtual const IStateId* makeState(IEventTrace* tr, int eventNum,
+        IEventLog::Attribute& actAttr) override;
+
+    const IStateId* makeState(const ParikhVector& pv);
+
+    virtual void reset() override;
+
+public:
+    //----<Setters/Getters>----
+
+    /** \brief Gets the Activity Attribute ID. */
+    std::string getActAttrID() const { return _actAttrID; }
+    
+    /** \brief Sets an Activity Attribute ID. */
+    void setActAttrID(const std::string& atid) { _actAttrID = atid; }
+
+    /** \brief Sets new basis to \a basis. */
+    void setBasis(const Matrix& basis) { _basis = basis; }
+
+    /** \brief Gets the current basis. */
+    Matrix getBasis() const { return _basis; }
+protected:
+
+    /** \brief Creates a parikh vector \a pv for a subtrace, 
+     *  which is determined by the trace num \a traceNum, 
+     *  a number \a beg of a first event in the subtrace,
+     *  and a number \a end of the last event.
+     *
+     */
+    void makeParikhVector(int traceNum, int beg, int end,
+        IEventLog::Attribute& actAttr, ParikhVector& pv);
+
+    // альтернативный вариант с трассой-объектом
+    void makeParikhVector(IEventTrace* tr, int beg, int end,
+        IEventLog::Attribute& actAttr, ParikhVector& pv);
+
+    /** \brief Internal implementation of makeStateFunc. */
+    const IStateId* makeStateInternal(const ParikhVector& pv);
+
+protected:
+    
+    /** \brief Stores a ptr to an event log.  */
+    IEventLog* _log;
+
+    /** \brief A specific pool for specific stateIDs. */
+    FixedIntListStateIdsPool* _stIDsPool;
+
+    /** \brief Stores a region basis. */
+    Matrix _basis;
+
+    /** \brief Stores a map that connects attributes to indexes in parikh vectors. */
+    const AttrIndexMap* _attrInds;
+
+    /** \brief Stores an ID for the Activity attribute. */
+    std::string _actAttrID;
+}; // class CondensedStateFunc
+    
+
 //==============================================================================
 //  class TsFoldBuilder
 //==============================================================================
@@ -181,4 +277,4 @@ protected:
 }}} // namespace xi { namespace ldopa { namespace ts {
 
 
-#endif // XI_LDOPA_TRSS_ALGOS_TS_SIMPLE_BUILDER_H_
+#endif // XI_LDOPA_TRSS_ALGOS_TS_FOLDING_BUILDER_H_

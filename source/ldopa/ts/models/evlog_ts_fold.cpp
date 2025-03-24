@@ -5,140 +5,53 @@
 
 namespace xi { namespace ldopa { namespace ts {
 
-
-//==============================================================================
-// class ParikhVector
-//==============================================================================
-
-ParikhVector::ParikhVector() 
-{
-
-}
-
-//------------------------------------------------------------------------------
-
-ParikhVector::~ParikhVector() 
-{
-
-}
-
-//------------------------------------------------------------------------------
-
-ParikhVector::ParikhVector(const ParikhVector& that) 
-    : _v(that._v)
-{
-
-}
-
-//------------------------------------------------------------------------------
-
-ParikhVector& ParikhVector::operator=(const ParikhVector& that)
-{
-    ParikhVector tmp(that);
-    std::swap(tmp, *this);
-
-    return *this;
-}
-
-//------------------------------------------------------------------------------
-
-ParikhVector GetDiff(ParikhVector lhs, const ParikhVector& rhs)
-{
-    lhs.Resize(rhs._v.size());
-    for (ParikhVector::Index i = 0; i < rhs._v.size(); ++i) {
-        lhs._v[i] -= rhs._v[i];
-    }
-    return lhs;
-}
-
-//------------------------------------------------------------------------------
-
-void ParikhVector::SubstractSuffix(Index k, const ParikhVector& rhs)
-{
-    Resize(rhs._v.size());
-
-    Value lcm = std::lcm(_v[k], rhs._v[k]);
-    if (lcm == 0) {
-        return;
-    }
-
-    Value factor = lcm / _v[k];
-    Value rhs_factor = lcm / rhs._v[k];
-
-    Value final_gcd = _v[0];
-    for (Index i = 0; i < k; ++i) {
-        _v[i] *= factor;
-        final_gcd = std::gcd(final_gcd, _v[i]);
-    }
-
-    for (Index i = k; i < rhs._v.size(); ++i) {
-        _v[i] = _v[i] * factor - rhs._v[i] * rhs_factor;
-        final_gcd = std::gcd(final_gcd, _v[i]);
-    }
-    // Reduce
-    if (final_gcd == 1) {
-        return;
-    }
-    for (Index i = 0; i < rhs._v.size(); ++i) {
-        _v[i] /= final_gcd;
-    }
-}
-
-//------------------------------------------------------------------------------
-
-void ParikhVector::AddAttrCnt(Index index, Value cnt)
-{
-    Resize(index);
-    _v[index] += cnt;
-}
-
-//------------------------------------------------------------------------------
-
-void ParikhVector::Resize(size_t count)
-{
-    if (count > _v.size()) {
-        _v.resize(count);
-    }
-}
-
-//------------------------------------------------------------------------------
-
-void ParikhVector::ForceResize(size_t count)
-{
-    _v.resize(count);
-}
-
-
-
 //==============================================================================
 // class EvLogTSWithParVecs
 //==============================================================================
 
-
 EvLogTSWithParVecs::EvLogTSWithParVecs(IStateIDsPool* stIDsPool)
     : Base(stIDsPool)
+    , _settings(DEF_SETTINGS)
+    , _diffs(Matrix())
 {
-    _stateParVec[getInitState()] = ParikhVector();
+    _stateParVec.insert(std::make_pair(getInitState(), ParikhVector()));
+}
+
+
+//------------------------------------------------------------------------------
+
+
+EvLogTSWithParVecs::EvLogTSWithParVecs(IStateIDsPool* stIDsPool, 
+    const AttrIndexMap& attrInds)
+    : Base(stIDsPool)
+    , _settings(DEF_SETTINGS)
+    , _attrInds(attrInds)
+    , _diffs(Matrix())
+{
+    _stateParVec.insert(std::make_pair(getInitState(), ParikhVector()));
 }
 
 
 //------------------------------------------------------------------------------
 
 EvLogTSWithParVecs::EvLogTSWithParVecs(const EvLogTSWithParVecs& that)
-    : BaseEventLogTS(that), _attrInds(that._attrInds)
+    : Base(that)
+    , _settings(that._settings)
+    , _attrInds(that._attrInds)
+    , _diffs(that._diffs)
 {
     validateStates(that);
 }
 
 //------------------------------------------------------------------------------
 
-EvLogTSWithParVecs& EvLogTSWithParVecs::operator=(const EvLogTSWithParVecs& that)
-{
-    EvLogTSWithParVecs tmp(that);
-    std::swap(tmp, *this);
+// EvLogTSWithParVecs& EvLogTSWithParVecs::operator=(const EvLogTSWithParVecs& that)
+// {
+//     EvLogTSWithParVecs tmp(that);
+//     std::swap(tmp, *this);
 
-    return *this;
-}
+//     return *this;
+// }
 
 //------------------------------------------------------------------------------
 
@@ -153,7 +66,8 @@ void EvLogTSWithParVecs::validateStates(const EvLogTSWithParVecs& that)
     {        
         auto it = that._stateParVec.find(*stOrig);
         if (it != that._stateParVec.end())                // если ключ для исходного вертекса
-            _stateParVec[*stCur] = it->second;
+            // _stateParVec[*stCur] = it->second;
+            _stateParVec.insert(std::make_pair(*stCur, it->second));
 
     }
 }
@@ -204,8 +118,9 @@ EvLogTSWithParVecs::ParikhVectorRes EvLogTSWithParVecs::getParikhVector(State s)
     StateParikhVectorMap::const_iterator pv = _stateParVec.find(s);
     if (pv == _stateParVec.end())
         return std::make_pair(ParikhVector(), false);   
-
-    return std::make_pair((*pv).second, true);
+    
+    ParikhVector pv_ans = (*pv).second;
+    return std::make_pair(pv_ans, true);
 }
 
 EvLogTSWithParVecs::ParikhVectorPtr EvLogTSWithParVecs::getParikhVectorPtr(State s)
@@ -219,9 +134,13 @@ EvLogTSWithParVecs::ParikhVectorPtr EvLogTSWithParVecs::getParikhVectorPtr(State
 
 //------------------------------------------------------------------------------
 
-void EvLogTSWithParVecs::setParikhVector(State s, const ParikhVector& pv)
+void EvLogTSWithParVecs::setParikhVector(State s, const ParikhVector* pv)
 {
-    _stateParVec[s] = pv;
+    StateParikhVectorMap::iterator pvIt = _stateParVec.find(s);
+    if (pvIt == _stateParVec.end())
+        _stateParVec.insert(std::make_pair(s, *pv));
+    else
+        _stateParVec[s] = *pv;
 }
 
 //------------------------------------------------------------------------------
@@ -246,18 +165,24 @@ EvLogTSWithParVecs::Transition EvLogTSWithParVecs::getOrAddTransPV(State s, Stat
 {
     Index index = GetOrAddAttrIndex(lbl);
 
+    ParikhVectorPtr pv_s = getParikhVectorPtr(s);
+    if (!pv_s) {
+        throw LdopaException("Parikh vector for previous state does not exist");
+    }
+
     Transition tr = Base::getOrAddTrans(s, t, lbl);
-    StateParikhVectorMap::iterator pv_it = _stateParVec.find(t);
-    if (pv_it == _stateParVec.end()) {
-        ParikhVectorRes pvr = getParikhVector(s);
-        if (!pvr.second) {
-            throw LdopaException("Parikh vector for previous state does not exist");
-        }
-        pvr.first.AddAttrCnt(index, lblCnt);
-        setParikhVector(t, pvr.first);
-    } else {
-        ParikhVector& pv = (*pv_it).second;
+
+    ParikhVectorPtr pv_t = getParikhVectorPtr(t);
+    if (!pv_t) {
+        setParikhVector(t, pv_s);
+
+        pv_t = getParikhVectorPtr(t);
+        (*pv_t).AddAttrCnt(index, lblCnt);
+        
+    } else if (!_settings[SET_IGNORE_DIFFS]) {
+        ParikhVector pv = GetDiff(*pv_t, *pv_s);
         pv.AddAttrCnt(index, lblCnt);
+        _diffs.PushBack(pv);
     }
     return tr;
 }

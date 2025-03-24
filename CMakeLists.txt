@@ -5,8 +5,7 @@ include(cmake/prelude.cmake)
 project(
     xi
     VERSION 0.1.0
-    DESCRIPTION "Short description"
-    HOMEPAGE_URL "https://example.com/"
+    DESCRIPTION "Library for process mining"
     LANGUAGES CXX
 )
 
@@ -32,6 +31,7 @@ set(sources
     source/ldopa/ts/models/eventlog_ts_stateids.cpp
     source/ldopa/ts/models/evlog_ts_red.cpp
     source/ldopa/ts/models/evlog_ts_fold.cpp
+    source/ldopa/ts/models/parikh_vector.cpp
     source/ldopa/ts/models/eventlog_ts.cpp
     source/ldopa/ts/models/obsolete1/eventlogts.cpp
     source/ldopa/ts/models/obsolete1/basets.cpp

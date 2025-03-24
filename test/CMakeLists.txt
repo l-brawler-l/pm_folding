@@ -50,6 +50,7 @@ set(sources
 
     ldopa/ts/algos/evlog_ts_red_dotwriter_1_test.cpp
     ldopa/ts/algos/ts_simple_builder_1_test.cpp
+    ldopa/ts/algos/ts_folding_builder_1_test.cpp
     ldopa/ts/algos/ts_misc_converters_1_test.cpp
 
     ldopa/ts/models/evlog_ts_red_1_test.cpp
@@ -66,7 +67,6 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${sources})
 
 target_sources(xi_test PRIVATE ${sources})
 
-# add_executable(xi_test ldopa/eventlog/csvlog_test.cpp)
 target_link_libraries(xi_test PRIVATE 
     xi::xi
     GTest::gtest_main
