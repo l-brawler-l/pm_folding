@@ -6,7 +6,7 @@
 
 #include <gtest/gtest.h>
 
-#include "xi/ldopa/ts/algos/ts_folding_builder.h"
+
 #include "xi/ldopa/eventlog/sqlite/sqlitelog.h"
 #include "xi/ldopa/ts/algos/cycle_condenser.h"
 // #include "xi/ldopa/ts/algos/varws_ts_rebuilder.h"

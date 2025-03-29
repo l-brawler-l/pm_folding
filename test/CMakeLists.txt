@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.15)
 
 project(xiTests LANGUAGES CXX)
 
@@ -61,6 +61,15 @@ set(sources
     # ldopa/ts/models/obsolete1/eventlog_ts_1_test.cpp
     # ldopa/ts/models/obsolete1/basets_1_test.cpp
 
+    ldopa/pn/algos/base_ptnet_dotwriter_1_test.cpp
+    ldopa/pn/algos/pn_synthesis_1_test.cpp
+
+    ldopa/pn/models/base_ptnet_1_test.cpp
+    ldopa/pn/models/evlog_ptnets_1_test.cpp
+    ldopa/pn/models/gen_petrinet_1_test.cpp
+
+    # ldopa/complex/c_pn_synthesis_1_test.cpp
+    
     # ldopa/performance/performance_1_test.cpp
 )
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${sources})
