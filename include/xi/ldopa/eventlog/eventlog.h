@@ -298,13 +298,13 @@ public:
     virtual IAttributesEnumerator* getLogAttrs() = 0;
 
 
-    /** \brief Extract attribute with id \param id associated with a trace \param traceNum.
-     *
-     *  \param[out] a — extracted attribute if done.
-     *  \return true if an attribute exists and successfully extracted, false otherwise.
-     *
-     *  If the log is not open, returns false.
-     */
+    // /** \brief Extract attribute with id \param id associated with a trace \param traceNum.
+    //  *
+    //  *  \param[out] a — extracted attribute if done.
+    //  *  \return true if an attribute exists and successfully extracted, false otherwise.
+    //  *
+    //  *  If the log is not open, returns false.
+    //  */
     // virtual bool getLogAttr(int traceNum, const char* id, Attribute& a) = 0; // TODO вернуться сюда
 
     /** \brief Extract single attribute with id \a id associated with an event at

@@ -17,6 +17,13 @@ ParikhVector::ParikhVector()
 
 //------------------------------------------------------------------------------
 
+ParikhVector::ParikhVector(size_t size) 
+{
+    _v.resize(size);
+}
+
+//------------------------------------------------------------------------------
+
 ParikhVector::~ParikhVector() 
 {
 

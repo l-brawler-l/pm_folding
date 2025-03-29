@@ -48,8 +48,10 @@ public:
     
     typedef BaseEventLogTS Base;
 
+    /** \brief Declares type for integer. */
     typedef ParikhVector::Value Value;
 
+    /** \brief Declares type for indices. */
     typedef ParikhVector::Index Index;
 
     /** \brief Mapping of states to parikh vectors. */
@@ -98,9 +100,6 @@ public:
      */     
     EvLogTSWithParVecs(const EvLogTSWithParVecs& that);
 
-    /** \brief Copy constructor. */
-    // EvLogTSWithParVecs& operator=(const EvLogTSWithParVecs& that);
-
     /** \brief Virtual Destructor. */
     virtual ~EvLogTSWithParVecs();
 
@@ -117,18 +116,12 @@ public:
     /** \brief Gets a transition between given pair of states \a s and \a t,
      *  marked by a label \a lbl, taking into account parikh vectors. 
      *
-     *  If the same transition appears again and again, parikh vector of state \a t is increased
-     *  by adding attribute \a lbl \a lblCnt times.
+     *  If the same transition appears again and again, parikh differences are writen into matrix.
      *  If no transition exists, creates a new one.
      *
      *  If you do not want to change parikh vector of state \a t, use getOrAddTrans insted.
      */
     Transition getOrAddTransPV(State s, State t, const Attribute& lbl, Value lblCnt);
-
-    // /** \brief Creates parikh vector for state \a cur by copying parikh vector from
-    //  * state \a prev and adding to it attribute \a lbl \a lblCnt times.
-    //  */
-    // void createParikhVector(State prev, State cur, const Attribute& lbl, Value lblCnt);
 
 public:
     //----<Working with attributes>----
@@ -159,10 +152,6 @@ public:
      * the way from the initial state to state \a s.
      */
     Value getStateAttrCnt(State s, const Attribute& lbl) const;
-
-    // /**  \brief Adds ttribute \a lbl \a lblCnt times to Parikh Vector of state \a s.
-    //  */
-    // void addActToParikhVector(State s, const Attribute& act, Value lblCnt);
 
 public:
     //-----<Helpers for work with settings>-----
@@ -199,10 +188,10 @@ protected:
     /** \brief Stores a map of states to parikh vector. */
     StateParikhVectorMap _stateParVec;
 
-    /** \brief Stores a map that connects attributes to indexes in parikh vectors. */
+    /** \brief Stores a map that connects attributes to indices in parikh vectors. */
     AttrIndexMap _attrInds;
 
-    /** \brief Stores parikh vectors differences rhat equivalent to zero. */
+    /** \brief Stores parikh vectors differences that equivalent to zero. */
     Matrix _diffs;
 
 }; // class EvLogTSWithFreqs

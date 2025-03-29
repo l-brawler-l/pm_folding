@@ -180,7 +180,7 @@ protected:
 
     /** \brief Obtain an error code \a errCode (most often as a result of some method),
      *  and checks whether it is ok or not. If the code is not SQLITE_OK, retrieves the last
-     *  error description and raises an exception with the given text \msg, which can contain
+     *  error description and raises an exception with the given text \a msg, which can contain
      *  placeholders for printf() formaters (1-st: %d errcode and 2-nd: %s message).
      */
     void checkResForOk(int errCode, const char* msg);

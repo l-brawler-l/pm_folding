@@ -53,6 +53,10 @@ struct EdgeProperty_traits
 
 class LDOPA_API CycleCondensedTsBuilder;
 
+/** \brief Base class for parikh trie. Primarily defines types.
+ *
+ *  Parikh trie is internally based on BGL bidigraph class.
+ */
 class BaseParikhTrie 
 {
 public:
@@ -64,7 +68,7 @@ public:
     typedef boost::adjacency_list<
         boost::listS,               // out edge storage
         boost::listS,               // vertices storage
-        boost::bidirectionalS,      // directed      
+        boost::directedS,             // directed      
         // properties
         boost::no_property,               // vertex properties
         EdgeProperty
@@ -80,7 +84,7 @@ public:
 */
 class LDOPA_API ParikhTrie :
 public BaseParikhTrie,
-protected gr::BoostBidiGraphP<typename BaseParikhTrie::Graph>
+protected gr::BoostGraphP<typename BaseParikhTrie::Graph>
 {
     friend class CycleCondensedTsBuilder;
 public:
@@ -178,6 +182,7 @@ public:
     /** \brief Returns a collection of Output Transitions of a state \a s (const). */
     inline OtransIterPair getOutTransitions(State s) const { return BaseGraph::getOutEdges(s); }
 
+    /** \brief Creates a new state with parikh vector ptr \a pv and returns it. */
     State addState(ParikhVector* pv = nullptr);
 
     /** \brief Extracts a parikh vector from state.
@@ -215,19 +220,21 @@ public:
      */
     StateTrans getOrAddTargetState(State s, Value lbl, ParikhVector* pv = nullptr);
 
-    /** \brief Returns the source State (vertex) of the given transitions \param t. */
+    /** \brief Returns the source State (vertex) of the given transitions \param t */
     State getSrcState(const Transition& t) const { return BaseGraph::getSrcVertex(t); }
 
-    /** \brief Returns the target State (vertex) of the given transitions \param t. */
+    /** \brief Returns the target State (vertex) of the given transitions \param t */
     State getTargState(const Transition& t) const { return BaseGraph::getTargVertex(t); }
 public:
-
+    /** \brief Builds a parikh trie */
     void build();
 
+    /** \brief Finds all tandem permutations in regions bounded with \a k and stores them in \a pvDiffs */
     void TandemSearch(Matrix& pvDiffs, unsigned int k);
 protected:
 
-    void processParikhVector(State s);
+    /** \brief Proceesses another parikh vector in TS state \a s */
+    void processParikhVector(TS::State s);
 
 protected:
     /** \brief Adds into the TS a new transition between the given states \a s and \a t,
@@ -244,15 +251,24 @@ protected:
         return trans;
     }
 
+     /** \brief Finds all tandem permutations in regions bounded with \a k 
+      * in all leaves of states \a v1 and \a v2 with multiplicity \a i
+      * and stores them in \a pvDiffs */
     void Recur(Matrix& pvDiffs, State v1, State v2, unsigned int i);
-
+    
+    /** \brief Recur analog but with all leaves in only one state \a v */
     void Recur(Matrix& pvDiffs, State v, unsigned int i);
 
 protected:
+    /** \brief Stores a TS based on which parikh trie will be built. */
     TS* _ts;
+    /** \brief Stores the initial state of parikh vector. */
     State* _initSt;
+    /** \brief Stores a map containing parikh vector ptrs for states in parikh trie. */
     StateToPVMap* _stPV;
+    /** \brief Stores a set of all edges from initial state */
     Domain* _initDom;
+    /** \brief Stores the maximum number of edges leaving the vertex */
     Value _maxv;
 }; // class ParikhTrie
 
@@ -340,8 +356,14 @@ public:
     double getBoundedness() const { return _k; }
 
 protected:
+    /** \brief Copies all states and transition from _srcTs to _ts 
+     * using state function _sf.
+    */
     void copyTS();
 
+    /** \brief Copies state \a stOrig from _srcTs to _ts 
+     * using state function _sf. \returns copied state.
+    */
     TS::State copyState(TS::State stOrig);
 
 protected:

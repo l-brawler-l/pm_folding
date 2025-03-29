@@ -6,10 +6,19 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.24")
 endif()
 
 include(FetchContent)
+# FetchContent_Declare(
+#     mcss URL
+#     https://github.com/friendlyanon/m.css/releases/download/release-1/mcss.zip
+#     URL_MD5 00cd2757ebafb9bcba7f5d399b3bec7f
+#     SOURCE_DIR "${PROJECT_BINARY_DIR}/mcss"
+#     UPDATE_DISCONNECTED YES
+#     ${extract_timestamps}
+# )
+
 FetchContent_Declare(
-    mcss URL
-    https://github.com/friendlyanon/m.css/releases/download/release-1/mcss.zip
-    URL_MD5 00cd2757ebafb9bcba7f5d399b3bec7f
+    mcss 
+    GIT_REPOSITORY https://github.com/mosra/m.css.git
+    GIT_TAG 6838b947a3cfae7bfe6040c934ad5bec62b6242d
     SOURCE_DIR "${PROJECT_BINARY_DIR}/mcss"
     UPDATE_DISCONNECTED YES
     ${extract_timestamps}

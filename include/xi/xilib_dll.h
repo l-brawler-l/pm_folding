@@ -6,11 +6,11 @@
 /// now (04.02.2015) it is in /src/ root dir, but may be it should be placed
 /// in /src/xi/ like in /xi/dpmodel/ project...
 ///
-/// * XILIB_DECLARE_EXPORT_IMPORT — macro defines that _dll(export) or _dll(import)
+/// * XILIB_DECLARE_EXPORT_IMPORT  macro defines that _dll(export) or _dll(import)
 ///   macros should be used (use only with DLL-target version of lib!)
-/// * XILIB_EXPIMP — macro defining if a symbol should be exported or imported instead
-///   XILIB — project name, _EXPIMP — standard notation for this macro
-/// * XILIB_EXPORT — is the macro is set, XILIB_EXPIMP is turned to "export",
+/// * XILIB_EXPIMP  macro defining if a symbol should be exported or imported instead
+///   XILIB  project name, _EXPIMP  standard notation for this macro
+/// * XILIB_EXPORT  is the macro is set, XILIB_EXPIMP is turned to "export",
 ///   otherwise ti "import"
 ///////////////////////////////////////////////////////////////////////////////
 

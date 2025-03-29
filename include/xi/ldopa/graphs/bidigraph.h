@@ -194,6 +194,8 @@ public:
 
 public:
     /** \brief Initialize with a linked graph.
+     * 
+     *  \param gr determines a bidirected graph
      *
      *  \param createReverseMap determines if a reverse map for fast search is to be created
      */

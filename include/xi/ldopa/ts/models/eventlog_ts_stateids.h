@@ -31,7 +31,7 @@
 #include <set>
 
 
-namespace xi { namespace ldopa { namespace ts {;   //
+namespace xi { namespace ldopa { namespace ts {   //
 
 //==============================================================================
 // class AttrListStateId
@@ -39,7 +39,7 @@ namespace xi { namespace ldopa { namespace ts {;   //
 
 /** \brief Declares a state ID type based on a list of attributes from EventLog(2) library.
  *
- *  #todo: специальное 0WS состояние
+ *  TODO: специальное 0WS состояние
  */
 class LDOPA_API AttrListStateId : public IStateId
 {
@@ -157,9 +157,10 @@ class LDOPA_API FixedIntListStateId : public IStateId
 public:
 #pragma region Type Definitions
 
+    /** \brief Declares type of integers. */
     typedef ParikhVector::Value Value;
 
-    /** \brief Declares Vector of attributes. */
+    /** \brief Declares Vector of integers. */
     typedef std::vector<Value> VectorOfInts;
 
 #pragma endregion // Type Definitions
@@ -202,13 +203,13 @@ public:
     virtual std::string toString() const override;
 
 public:
-    /** \brief Return the underlied vector of attributes. */
+    /** \brief Return the underlied vector of integers. */
     VectorOfInts& getAttrs() { return _attrs; }
 
-    /** \brief Const overloaded version of getPtrs(). */
+    /** \brief Const overloaded version of getAttrs(). */
     const VectorOfInts& getAttrs() const { return _attrs; }
 
-    /** \brief Append a given element \a el to the end of the attributes list. */
+    /** \brief Append a given element \a el to the end of the list of integers. */
     void append(Value el) { _attrs.push_back(el); }
 
 

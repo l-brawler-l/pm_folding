@@ -1192,7 +1192,7 @@ public:
     }
 
 
-    /** \brief Performs labels splitting for the event \event, for which the excitation closure
+    /** \brief Performs labels splitting for the event \a event, for which the excitation closure
      *  condition does not hold.
      *
      *  Accordiing to the Sec. 4.3 [Cortadella et al. 1998].

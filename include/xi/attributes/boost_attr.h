@@ -286,7 +286,7 @@ public:
 public:
     //--------<Operators>------------
 
-    /** \brief copy (assigning) operator  */
+    
     VarAttributeTVis1 operator=(const VarAttributeTVis1& rhv) 
     { 
         getRef() = rhv.getRef(); 

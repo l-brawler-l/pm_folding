@@ -41,10 +41,6 @@ namespace xi { namespace ldopa { namespace ts {
  * same State Id.
  *
  *  Uses FixedIntListStateIdsPool class for instantiate stateIDs.
- *
- *  #thinkof: возможно, стоит написать отдельные классы для StateId и 
- * Pool, потому что по сути сейчас пул хранит векторы от аттрибутов, а
- * здесь это просто числа.
  */
 class LDOPA_API CondensedStateFunc : public ITsStateFunc { //ITsStateFunc {
 public:
@@ -57,7 +53,12 @@ public:
 
 public:
     //----<Constructors and destructor>----
-    /** \brief Constructor initializes the function with a ptr to a state IDs pool. */
+    /** \brief Constructor initializes the function. 
+     * \param log is an underlying event log of TS.
+     * \param stIdsPool is the pool that will store all state ids.
+     * \param attrInts is the attribute permutation for parikh vectors.attributes
+     * \param basis is the region basis.
+    */
     CondensedStateFunc(IEventLog* log, FixedIntListStateIdsPool* stIDsPool, 
         const AttrIndexMap* attrInds, const Matrix& basis = Matrix());
 protected:
@@ -85,7 +86,7 @@ public:
     /** \brief Sets an Activity Attribute ID. */
     void setActAttrID(const std::string& atid) { _actAttrID = atid; }
 
-    /** \brief Sets new basis to \a basis. */
+    /** \brief Sets region basis to \a basis. */
     void setBasis(const Matrix& basis) { _basis = basis; }
 
     /** \brief Gets the current basis. */
@@ -242,8 +243,6 @@ protected:
     // альтернативный подход с трассой, как объектом
     void processTrace(IEventTrace* tr);
 
-    /** \brief Makes a new (single) accepting state and flows all previous AS to it. */
-    void makeSingleAcptState();
 protected:
     /** \brief Settings (flags) object. */
     SettingsBitset _settings;
